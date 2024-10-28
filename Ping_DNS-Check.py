@@ -1,15 +1,26 @@
 import csv
 import os
 import socket
+from ipaddress import ip_network
 
 # Function to ping an IP address
 def ping_ip(ip):
     try:
-        response = os.system(f"ping -c 1 {ip}")
-        return response == 0
+        # Check if the input is a subnet
+        if '/' in ip:
+            network = ip_network(ip, strict=False)
+            ping_results = {}
+            for host_ip in network.hosts():
+                response = os.system(f"ping -c 1 {host_ip}")
+                ping_results[str(host_ip)] = (response == 0)
+            return ping_results  # Dictionary of IP: ping status
+        else:
+            # Single IP address
+            response = os.system(f"ping -c 1 {ip}")
+            return {ip: response == 0}
     except Exception as e:
         print(f"Error pinging {ip}: {e}")
-        return False
+        return {ip: False}
 
 # Function to perform reverse DNS lookup on an IP address
 def reverse_dns_lookup(ip):
